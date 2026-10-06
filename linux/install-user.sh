@@ -26,6 +26,7 @@ mkdir -p "$BIN_DIR" "$LIBEXEC_DIR" "$DATA_DIR" "$APP_DIR" "$ICON_DIR" "$SYSTEMD_
 
 install -m 0755 "$DAEMON" "$LIBEXEC_DIR/fxsoundd"
 install -m 0755 "$UI" "$LIBEXEC_DIR/fxsound-ui"
+install -m 0755 "$LINUX_DIR/fxsound-rt-priority.sh" "$LIBEXEC_DIR/fxsound-rt-priority"
 
 declare -A PRESETS=(
   [1.fac]="General.fac"
@@ -65,6 +66,7 @@ Wants=pipewire.service
 [Service]
 Type=simple
 ExecStart=%h/.local/libexec/fxsound-linux/fxsoundd
+ExecStartPost=%h/.local/libexec/fxsound-linux/fxsound-rt-priority
 Environment=FXSOUND_SINK_NAME=fxsound_sink
 Environment=FXSOUND_SINK_DESCRIPTION=FxSound
 Environment=FXSOUND_OUTPUT_NAME=fxsound_processed_output

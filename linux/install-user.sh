@@ -96,7 +96,6 @@ export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
 
 systemctl --user daemon-reload
-systemctl --user disable --now jamesdsp.service >/dev/null 2>&1 || true
 systemctl --user enable --now fxsound-linux.service
 
 for _ in $(seq 1 50); do

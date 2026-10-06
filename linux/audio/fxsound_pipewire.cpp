@@ -333,7 +333,8 @@ bool apply_preset(App& app, const std::filesystem::path& preset_path) {
         app.dsp.setEqBandBoostCut(band, app.dsp.getEqBandBoostCut(band));
     }
 
-    app.dsp.eqOn(true);
+    // loadPreset() already restores FxSound's stored EQ on/off state.
+    // Do not force EQ on here; Windows respects the flag embedded in the .fac.
     return true;
 }
 

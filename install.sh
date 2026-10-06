@@ -2,6 +2,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  exec "$ROOT/macos/install.sh" "$@"
+fi
+
 JUCE_DIR="$ROOT/linux/.deps/JUCE"
 BUILD_DIR="$ROOT/linux/build-release"
 

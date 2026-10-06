@@ -1,0 +1,53 @@
+name: macOS port
+
+on:
+  push:
+    branches: [main, macos-port]
+    paths:
+      - "macos/**"
+      - "dsp/**"
+      - "audiopassthru/**"
+      - "fxsound/**"
+      - "linux/compat/**"
+      - "linux/ui/**"
+      - "linux/tests/**"
+      - "linux/factory-presets/**"
+      - ".github/workflows/macos-port.yml"
+  pull_request:
+    paths:
+      - "macos/**"
+      - "dsp/**"
+      - "audiopassthru/**"
+      - "fxsound/**"
+      - "linux/compat/**"
+      - "linux/ui/**"
+      - "linux/tests/**"
+      - "linux/factory-presets/**"
+      - ".github/workflows/macos-port.yml"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch JUCE 6.1.6
+        run: |
+          git clone --depth 1 --branch 6.1.6 \
+            https://github.com/juce-framework/JUCE.git macos/.deps/JUCE
+          python3 macos/patch_juce_macos26.py macos/.deps/JUCE
+
+      - name: Configure
+        run: |
+          cmake -S macos -B macos/build-ci \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DFXSOUND_JUCE_DIR="$PWD/macos/.deps/JUCE"
+
+      - name: Build
+        run: cmake --build macos/build-ci --parallel
+
+      - name: DSP smoke test
+        run: macos/build-ci/dsp_smoke
+
+      - name: Factory preset audio test
+        run: macos/build-ci/preset_audio_test linux/factory-presets/1.fac

@@ -357,3 +357,9 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+
+# FxSound community-port local build/dependency trees
+mac-build-*/
+macos/build-*/
+macos/.deps/
+linux/.deps/

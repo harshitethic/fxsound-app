@@ -31,8 +31,17 @@ class FxEqualizer : public Component, Slider::Listener, Timer
 public:
     static FxEqualizer& getInstance()
     {
-        static FxEqualizer equalizer;
-        return equalizer;
+        auto*& equalizer = instanceStorage();
+        if (equalizer == nullptr)
+            equalizer = new FxEqualizer();
+        return *equalizer;
+    }
+
+    static void destroyInstance()
+    {
+        auto*& equalizer = instanceStorage();
+        delete equalizer;
+        equalizer = nullptr;
     }
 
 	FxEqualizer();
@@ -49,7 +58,29 @@ public:
 	void update();
 	void showValues(bool show);
 
+    bool qaSetBandGain(int band, double value)
+    {
+        if (band < 0 || band >= static_cast<int>(band_boosts_.size()) || band_boosts_[band] == nullptr)
+            return false;
+        band_boosts_[band]->setValue(value, NotificationType::sendNotificationSync);
+        return true;
+    }
+
+    bool qaSetBandFrequency(int band, double value)
+    {
+        if (band < 0 || band >= static_cast<int>(center_frequencies_.size()) || center_frequencies_[band] == nullptr)
+            return false;
+        center_frequencies_[band]->setValue(value, NotificationType::sendNotificationSync);
+        return true;
+    }
+
 private:
+    static FxEqualizer*& instanceStorage()
+    {
+        static FxEqualizer* equalizer = nullptr;
+        return equalizer;
+    }
+
     class FxEqSlider : public Slider
     {
     public:

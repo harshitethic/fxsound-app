@@ -580,6 +580,11 @@ std::string status_json(App& app) {
         << ",\"filter_q\":" << app.dsp.getFilterQ()
         << "}"
         << ",\"bands\":" << app.dsp.getNumEqBands()
+        << ",\"engine\":{\"rate\":" << kRate
+        << ",\"channels\":" << kChannels
+        << ",\"latency_frames\":" << kWindowsPrimeFrames
+        << ",\"latency_ms\":" << kWindowsAverageDelayMs
+        << "}"
         << ",\"eq\":[";
 
     for (int band = 0; band < app.dsp.getNumEqBands(); ++band) {

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  exec "$ROOT/macos/uninstall.sh" "$@"
+fi
+
 PURGE=0
 [[ "${1:-}" == "--purge" ]] && PURGE=1
 

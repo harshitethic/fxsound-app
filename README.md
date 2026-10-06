@@ -1,40 +1,54 @@
-# FxSound Linux
+# FxSound for Linux & macOS
 
-**An unofficial native Linux port of the open-source FxSound audio enhancer.**
+**Unofficial community ports of the open-source FxSound audio enhancer.**
 
-FxSound Linux keeps the real upstream **DfxDsp** processing engine and original FxSound factory presets, replaces the Windows WASAPI/virtual-driver layer with **PipeWire**, and reuses FxSound's JUCE visual language for a native Linux desktop UI.
+This fork keeps the real upstream **FxSound DfxDsp** processing engine and
+original factory presets, while replacing the Windows-only audio transport with
+native platform backends:
 
-> **Status:** v0.1.0-alpha — usable and tested on Kali Linux, but still an early community port.
+- **Linux:** PipeWire
+- **macOS:** CoreAudio + BlackHole 2ch
+
+The goal is to keep platform-specific work at the audio/UI boundary so the
+actual FxSound processing remains as close to upstream Windows behavior as
+practical.
+
+> **Status**
+>
+> - Linux: **v0.1.0-alpha**, tested on Kali Linux
+> - macOS: **v0.2.2-alpha**, tested on Apple Silicon / macOS 26.6
 
 ![FxSound Linux](docs/screenshots/fxsound-linux-dark.jpg)
 
-## Why this exists
+## Features
 
-FxSound's application and DSP source are open source, but the official desktop app targets Windows. This project ports the audio path to Linux while keeping Linux-specific changes at the platform boundary so the actual FxSound processing stays as close to upstream as practical.
-
-### Current Windows-parity work
-
-- Real upstream FxSound **DfxDsp** engine
-- Byte-for-byte upstream factory `.fac` presets
+- Real upstream FxSound **DfxDsp**
+- Original FxSound factory `.fac` presets
 - 32-bit floating-point processing
-- 48 kHz processing on 48 kHz-family devices
-- Windows-style ~40 ms / 1920-frame processing cadence on 48 kHz
-- Windows default **10-band EQ**, with 5 / 10 / 15 / 20 / 31-band modes available
-- Clarity, Ambience, Surround, Dynamic Boost and Bass Boost
-- Master Gain, Volume Leveling, Balance and Filter Q
+- 48 kHz stereo primary path
+- Windows-style ~40 ms / 1920-frame processing cadence
+- Windows default **10-band EQ**
+- Optional 5 / 10 / 15 / 20 / 31-band modes
+- Clarity / Fidelity
+- Ambience
+- Surround
+- Dynamic Boost
+- Bass Boost
+- Volume Leveling
+- Master Gain
+- Balance
+- Filter Q
 - Preset autosave / modified state
-- Native PipeWire output-device discovery and switching
-- Live spectrum visualizer
-- Light and dark UI modes
-- User-level systemd service and desktop launcher
-
-The Windows virtual audio driver/WASAPI layer is not copied to Linux. PipeWire provides the Linux virtual sink and routing instead.
+- Persistent output-device selection
+- Dark / light UI
+- Compact / full UI
+- Always-on-Top preference
+- Live visualizer
+- User-level auto-start services
 
 ## Install
 
-### Debian / Ubuntu / Kali
-
-Clone the project and run the installer:
+The same command works on supported Linux systems and macOS:
 
 ```bash
 git clone https://github.com/harshitethic/fxsound-app.git
@@ -42,142 +56,165 @@ cd fxsound-app
 ./install.sh
 ```
 
-The installer:
+The root installer detects the operating system automatically.
 
-1. Installs the required build dependencies.
-2. Downloads **JUCE 6.1.6**.
-3. Builds the real FxSound DSP engine, PipeWire backend and desktop UI.
-4. Runs DSP/preset smoke tests.
-5. Installs everything for your current user.
-6. Enables the FxSound Linux user service.
-7. Sets the virtual **FxSound** sink as the default output.
+### macOS
 
-No system-wide FxSound files are installed. The application lives under your home directory.
+The macOS installer builds FxSound from source, installs the app to:
 
-After installation, open **FxSound Linux** from your application menu or run:
+```text
+~/Applications/FxSound.app
+```
+
+and stores runtime files/settings under:
+
+```text
+~/Library/Application Support/FxSound
+```
+
+The stable system-audio path uses **BlackHole 2ch**. If BlackHole is being
+installed for the first time, macOS requires one restart. After restarting,
+run `./install.sh` again.
+
+The FxSound UI starts **minimized at login**, while the audio daemon starts
+automatically and keeps the last selected FxSound settings.
+
+Full macOS notes: [macos/README.md](macos/README.md)
+
+### Debian / Ubuntu / Kali
+
+The Linux installer installs the required PipeWire/JUCE build dependencies,
+builds the native daemon/UI, runs DSP tests and enables the user service.
+
+Open it after installation with:
 
 ```bash
 fxsound-linux
 ```
 
-### Requirements
-
-- A Linux desktop using **PipeWire + WirePlumber**
-- CMake 3.22+
-- A C++17 compiler
-- Debian/Ubuntu/Kali for the automatic installer
-- Stereo output is the currently tested path
-
-Other distributions can use the manual build instructions in [linux/README.md](linux/README.md).
+Full Linux notes: [linux/README.md](linux/README.md)
 
 ## Uninstall
 
-Keep your FxSound settings:
+Keep saved settings:
 
 ```bash
 ./uninstall.sh
 ```
 
-Remove the app **and** its saved settings:
+Remove the app and saved settings:
 
 ```bash
 ./uninstall.sh --purge
 ```
 
-The uninstaller stops the user service, removes the FxSound files and restores a real hardware sink as the default when possible. It does **not** disable or remove unrelated audio software.
+On macOS, BlackHole is intentionally **not** removed because other audio
+software may depend on it.
 
 ## Architecture
+
+### Linux
 
 ```text
 Linux applications
        |
        v
-PipeWire virtual sink: "FxSound"
+PipeWire virtual sink: FxSound
        |
        v
 Upstream FxSound DfxDsp
-  - Clarity / Fidelity
-  - Ambience
-  - Surround
-  - Dynamic Boost
-  - Bass Boost
-  - Graphic EQ
-  - original .fac presets
        |
        v
 Selected PipeWire hardware sink
 ```
 
-The realtime daemon and UI communicate through:
+### macOS
 
 ```text
-$XDG_RUNTIME_DIR/fxsound-linux/control.sock
+macOS applications
+       |
+       v
+BlackHole 2ch
+       |
+       v
+Upstream FxSound DfxDsp
+       |
+       v
+Selected physical CoreAudio output
 ```
 
-## Useful commands
+The macOS source also includes an experimental native CoreAudio process-tap
+backend. It is disabled by default on the tested macOS 26.6 system because
+Apple's HAL can block while starting a private tap aggregate.
 
-Check the service:
+## Windows-parity work
 
-```bash
-systemctl --user status fxsound-linux.service
+The ports intentionally keep the upstream FxSound processing code rather than
+reimplementing an approximate EQ.
+
+Current parity work includes:
+
+- upstream DfxDsp signal path
+- upstream factory preset payloads
+- 48 kHz stereo processing
+- Windows-style ~40 ms buffer priming
+- default 10-band EQ
+- original effect controls
+- persistent preset/EQ/audio-control state
+
+The final output can still differ from Windows because PipeWire/CoreAudio,
+hardware drivers and OS-level speaker processing are different.
+
+## Build tests
+
+Linux and macOS both have CI workflows that compile the native port and run:
+
+```text
+dsp_smoke
+preset_audio_test
 ```
 
-Restart the audio engine:
-
-```bash
-systemctl --user restart fxsound-linux.service
-```
-
-List PipeWire devices:
-
-```bash
-wpctl status
-```
-
-Run the DSP tests from a source checkout:
-
-```bash
-linux/build-release/dsp_smoke
-linux/build-release/preset_audio_test linux/factory-presets/1.fac
-```
+The macOS workflow also fetches JUCE 6.1.6 and applies the small SDK
+compatibility patch used by the installer.
 
 ## Known limitations
 
-This is an alpha Linux port, not an official FxSound release.
-
-- The Windows FxSound virtual audio driver is replaced by PipeWire.
-- Stereo is the primary tested output path today.
-- Hardware/device behavior can differ between PipeWire setups.
-- Bluetooth, surround/multichannel outputs and unusual sample-rate devices need broader testing.
-- The Linux UI is intentionally close to FxSound, but some Windows-specific tray/update/integration behavior is not applicable.
-- Automatic installation currently targets Debian-family distributions.
-
-Bug reports and tested-device reports are very welcome.
+- These are **unofficial community ports**, not official FxSound releases.
+- Stereo is currently the best-tested path.
+- Bluetooth, HDMI, 5.1/7.1 and unusual sample rates need broader testing.
+- The macOS native process-tap backend is experimental.
+- Linux automatic installation currently targets Debian-family distributions.
+- macOS automatic installation assumes Homebrew when dependencies are missing.
 
 ## Contributing
 
-PRs are welcome, especially for:
+PRs and tested-device reports are welcome, especially for:
 
-- PipeWire device/rate handling
-- Bluetooth testing
-- 5.1 / 7.1 routing
-- packaging for Fedora/Arch/openSUSE
-- AppImage/Flatpak packaging
-- UI polish
-- automated audio regression testing
+- Bluetooth / HDMI validation
+- multichannel audio
+- adaptive 44.1 / 48 kHz handling
+- packaging
+- UI parity
+- automated audio regression tests
+- macOS native system-tap reliability
 
-Please keep platform-specific changes outside the DSP algorithms wherever possible.
+Please keep platform-specific changes outside the DSP algorithms wherever
+possible.
 
 ## Upstream and license
 
-This project is derived from [FxSound](https://github.com/fxsound2/fxsound-app) and preserves its copyright notices and history.
+This project is derived from
+[FxSound](https://github.com/fxsound2/fxsound-app) and preserves its repository
+history and copyright notices.
 
-FxSound and this derivative are licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**. See [LICENSE](LICENSE).
+FxSound and this derivative are licensed under the **GNU Affero General Public
+License v3.0 or later (AGPL-3.0-or-later)**. See [LICENSE](LICENSE).
 
-This repository is an **unofficial community Linux port** and is not presented as an official FxSound Linux release.
+This fork is not presented as an official FxSound Linux or macOS release.
 
 ---
 
 ### Built by [@harshitethic](https://github.com/harshitethic) with love.
 
-And a lot of listening to the same songs over and over until Linux stopped sounding different.
+And a lot of listening to the same songs over and over until Linux and macOS
+stopped sounding different.

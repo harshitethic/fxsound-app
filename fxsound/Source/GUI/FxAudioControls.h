@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <JuceHeader.h>
+#include <algorithm>
 #include "FxAudioSlider.h"
 #include "FxBalanceSlider.h"
 #include "FxTheme.h"
@@ -36,6 +37,15 @@ public:
 
 	void update();
 	void showValues(bool show);
+
+    bool qaSetEffect(EffectType effect, double value)
+    {
+        const int i = static_cast<int>(effect);
+        if (i < 0 || i >= static_cast<int>(effects_.size()) || effects_[i] == nullptr)
+            return false;
+        effects_[i]->setValue(value, NotificationType::sendNotificationSync);
+        return true;
+    }
 
 private:
 	class FxEffectSlider : public Slider
@@ -85,6 +95,43 @@ public:
 	void update();
 
     void setLookAndFeel(FxTheme& theme);
+
+    // Internal QA hook used by the macOS port's --qa-self-test mode.
+    bool qaClickRestoreDefaults()
+    {
+        if (!restore_defaults_button_.onClick)
+            return false;
+        restore_defaults_button_.onClick();
+        return true;
+    }
+
+    bool qaSelectBands(int bands)
+    {
+        if (std::find(equalizer_bands_.begin(), equalizer_bands_.end(), bands) == equalizer_bands_.end())
+            return false;
+        equalizer_.setSelectedId(bands, NotificationType::sendNotificationSync);
+        return true;
+    }
+
+    void qaSetMasterGain(double value)
+    {
+        master_gain_slider_.setValue(value, NotificationType::sendNotificationSync);
+    }
+
+    void qaSetVolumeLeveling(double value)
+    {
+        volume_leveling_slider_.setValue(value, NotificationType::sendNotificationSync);
+    }
+
+    void qaSetFilterQ(double value)
+    {
+        filter_q_slider_.setValue(value, NotificationType::sendNotificationSync);
+    }
+
+    void qaSetBalance(double value)
+    {
+        balance_slider_.setValue(value, NotificationType::sendNotificationSync);
+    }
 
 private:
 	void resized() override;
@@ -142,6 +189,25 @@ public:
 	void showValues(bool show);
 
 	void setLookAndFeel();
+
+    // Internal QA hooks used only by the macOS --qa-self-test mode.
+    bool qaToggleView()
+    {
+        if (!flip_button_.onClick)
+            return false;
+        const bool before = effects_shown_;
+        flip_button_.onClick();
+        return effects_shown_ != before;
+    }
+
+    bool qaEffectsShown() const noexcept { return effects_shown_; }
+    bool qaClickRestoreDefaults() { return equalizer_control_.qaClickRestoreDefaults(); }
+    bool qaSetEffect(FxEffects::EffectType effect, double value) { return effects_.qaSetEffect(effect, value); }
+    bool qaSelectBands(int bands) { return equalizer_control_.qaSelectBands(bands); }
+    void qaSetMasterGain(double value) { equalizer_control_.qaSetMasterGain(value); }
+    void qaSetVolumeLeveling(double value) { equalizer_control_.qaSetVolumeLeveling(value); }
+    void qaSetFilterQ(double value) { equalizer_control_.qaSetFilterQ(value); }
+    void qaSetBalance(double value) { equalizer_control_.qaSetBalance(value); }
 
 private:
 	static constexpr int WIDTH = 168;

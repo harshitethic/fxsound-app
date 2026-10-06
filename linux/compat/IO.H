@@ -1,2 +1,3 @@
 #pragma once
-#include "io.h"
+#include <unistd.h>
+#define _access access

@@ -36,9 +36,11 @@ public:
     bool isConnected() const { return connected_; }
     bool isPowerOn() const { return power_on_; }
     const juce::String& getCurrentPreset() const { return current_preset_; }
+    bool isPresetModified() const { return preset_modified_; }
     const juce::StringArray& getPresets() const { return presets_; }
 
     bool setPresetName(const juce::String& name);
+    bool resetCurrentPreset();
     void setPowerState(bool on);
 
     int getOutputCount() const { return static_cast<int>(outputs_.size()); }
@@ -89,6 +91,7 @@ private:
 
     bool connected_{false};
     bool power_on_{true};
+    bool preset_modified_{false};
     juce::String current_preset_{"General"};
     juce::StringArray presets_;
     juce::String current_output_node_;

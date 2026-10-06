@@ -167,13 +167,12 @@ int PT_DECLSPEC comRealWrite(PT_HANDLE *hp_com, long l_mem_offset, realtype r_va
 
 	if( cast_handle->softdsp_mode )
 	{
-	    void *i_val;
-	    i_val = &r_value;
+	    uint32_t dsp_word = 0;
+	    static_assert(sizeof(r_value) == sizeof(dsp_word), "FxSound realtype must remain a 32-bit float");
+	    memcpy(&dsp_word, &r_value, sizeof(dsp_word));
 
-  	    /* To speed up parameter writes with remote operation, use single call.
-	     * This new function will handle COMM_MEM_BASE_ADDR offsetting.
-	     */
-	    if( comSftwrWriteParam(cast_handle->comSftwr_hdl, (long)(l_mem_offset), *(long*)i_val) != OKAY)
+  	    /* Preserve the original Windows 32-bit DSP parameter word. */
+	    if( comSftwrWriteParam(cast_handle->comSftwr_hdl, (long)(l_mem_offset), (long)dsp_word) != OKAY)
 		  return(NOT_OKAY);
 	}
 
@@ -276,9 +275,9 @@ int fmsbintoti(float *src4, float *dest4)
 	if(sign)
 	{
 		unsigned char exp = ti[3];  /* Save formed exponent */
-		*(long *)ti &= 0x00FFFFFFL; /* Mask out exponent bits */
-		*(long *)ti ^= 0x00FFFFFFL; /* Reverse all the mantissa bits */
-		*(long *)ti += 1;           /* Add one, completeing mantissa negation */
+		*(uint32_t *)ti &= UINT32_C(0x00FFFFFF); /* Mask out exponent bits */
+		*(uint32_t *)ti ^= UINT32_C(0x00FFFFFF); /* Reverse all the mantissa bits */
+		*(uint32_t *)ti += UINT32_C(1);           /* Add one, completeing mantissa negation */
 											 /* Carry bit will overflow into exponent */
 											 /* where it needs to be treated as a decrement */
 		ti[3] = exp - ti[3];			 /* Restore exponent, decremented by carry bit */

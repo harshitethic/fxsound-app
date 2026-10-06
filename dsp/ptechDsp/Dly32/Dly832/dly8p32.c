@@ -96,7 +96,7 @@ DSP_FUNC_DEF int DSPS_DLY_INIT(float *fp_params, float *fp_memory, long l_memsiz
 	long i;
  
 	#define FPVAL *(volatile float *)
-	#define LPVAL *(volatile long *) 
+	#define LPVAL *(volatile PT_DSP_LONG *) 
 
 	if( i_init_flag & DSPS_INIT_PARAMS )
 	{
@@ -137,14 +137,14 @@ DSP_FUNC_DEF int DSPS_DLY_INIT(float *fp_params, float *fp_memory, long l_memsiz
 		FPVAL(ELEM7_PAN_GAIN_LEFT) = 0.0;
 		FPVAL(ELEM7_PAN_GAIN_RIGHT) = 0.0;
 		/* Initialize delay values */
-		*(volatile long *)(ELEM0_DELAY) = 1;
-		*(volatile long *)(ELEM1_DELAY) = 1;
-		*(volatile long *)(ELEM2_DELAY) = 1;
-		*(volatile long *)(ELEM3_DELAY) = 1;
-		*(volatile long *)(ELEM4_DELAY) = 1;
-		*(volatile long *)(ELEM5_DELAY) = 1;
-		*(volatile long *)(ELEM6_DELAY) = 1;
-		*(volatile long *)(ELEM7_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM0_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM1_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM2_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM3_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM4_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM5_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM6_DELAY) = 1;
+		*(volatile PT_DSP_LONG *)(ELEM7_DELAY) = 1;
 	}
 
 	if( i_init_flag & DSPS_INIT_MEMORY )
@@ -198,7 +198,7 @@ DSP_FUNC_DEF int DSPS_DLY_INIT(float *fp_params, float *fp_memory, long l_memsiz
 		{	/* Init old delay values */
 			unsigned j;
 			for(j=0; j<NUM_ELEMS; j++)
-				old_delay[j] =  (float)*(volatile long *)(ELEM0_DELAY + j);
+				old_delay[j] =  (float)*(volatile PT_DSP_LONG *)(ELEM0_DELAY + j);
 		}
 
 		/* Place variables into state array */
@@ -361,7 +361,7 @@ DSP_FUNC_DEF void DSPS_DLY_PROCESS(long *lp_data, int l_length,
 	  
 	  {	  /* Loop to filter delay settings- looping was faster */
 		  unsigned j;
-		  volatile long *delay = (volatile long *)(ELEM0_DELAY);
+		  volatile PT_DSP_LONG *delay = (volatile PT_DSP_LONG *)(ELEM0_DELAY);
 		  for(j=0; j<NUM_ELEMS; j++)
 		  {
 			/* Hardware version filters delay changes, no filtering on soft dsp */

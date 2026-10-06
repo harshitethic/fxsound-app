@@ -38,7 +38,7 @@
  */
 #if (defined(DUIO_B) | defined(DUIO_BA) | defined(DUIO_BD))
 #define load_parameter() \
-if( (*(volatile long *)(DSP_DMA_IN_TRANSFER)) == 0 ) \
+if( (*(volatile PT_DSP_LONG *)(DSP_DMA_IN_TRANSFER)) == 0 ) \
 { \
 	if( address_valid_flag_MACRO ) \
 	{ \
@@ -91,7 +91,7 @@ volatile unsigned iflg;
 	{ \
 		long parm_MACRO; \
 		parm_MACRO = io_adr->xfr_reg; \
-		*(volatile long *)parm_address = parm_MACRO; \
+		*(volatile PT_DSP_LONG *)parm_address = parm_MACRO; \
 		address_flag = 0; \
 	} \
 }
@@ -117,7 +117,7 @@ volatile unsigned iflg;
 	{ \
 		long parm_MACRO; \
 		parm_MACRO = io_adr->xfr_reg; \
-		*(volatile long *)parm_address = parm_MACRO; \
+		*(volatile PT_DSP_LONG *)parm_address = parm_MACRO; \
 		address_flag = 0; \
 	} \
 }

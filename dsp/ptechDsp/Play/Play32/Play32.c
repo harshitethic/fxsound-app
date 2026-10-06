@@ -109,7 +109,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		struct dspPlayStructType *s = (struct dspPlayStructType *)params;
 
 		/* Save stereo mode for transfer to other parameter sets. */
-		stereo_mode = ((long *)(fp_params))[DSP_PLAY_STEREO_MODE_INDEX];
+		stereo_mode = ((PT_DSP_LONG *)(fp_params))[DSP_PLAY_STEREO_MODE_INDEX];
 
 		s->bypass_on = 0L;
 		s->activator_on = 1L;
@@ -260,7 +260,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		struct dspAuralStructType *s = (struct dspAuralStructType *)params;
 
 		/* Need to transfer the stereo mode from the first set to each set */
-		((long *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
+		((PT_DSP_LONG *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
 
 		/* Initialization values from Quick preset 1, 44khz */
 		s->dry_gain = (realtype)0.622047;	  
@@ -289,7 +289,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		struct dspLexStructType *s = (struct dspLexStructType *)params;
 
 		/* Need to transfer the stereo mode from the first set to each set */
-		((long *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
+		((PT_DSP_LONG *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
 
 		/* Initial values from quick pick one but with dry/wet of 0.21, 44.1kHz.
 		 * Wet-Dry are boosted for better bypass balance
@@ -331,7 +331,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		struct dspWideStructType *s = (struct dspWideStructType *)params;
  
 		/* Need to transfer the stereo mode from the first set to each set */
-		((long *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
+		((PT_DSP_LONG *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
 
 		/* Starting Presets - at 44.1 hHz.
 		 * Intensity - 35
@@ -371,7 +371,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		float *COMM_MEM_OFFSET = params;
 
  		/* Need to transfer the stereo mode from the first set to each set */
-		((long *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
+		((PT_DSP_LONG *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
 
 		/* Set input muting value to 1.0 */
 		*(volatile float *)(DSP_MUTE_IN_FLAG) = 1.0;
@@ -401,7 +401,7 @@ DSP_FUNC_DEF int DSPS_PLAY_INIT(float *fp_params, float *fp_memory, long l_memsi
 		struct dspMaxiStructType *s = (struct dspMaxiStructType *)params;
  
 		/* Need to transfer the stereo mode from the first set to each set */
-		((long *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
+		((PT_DSP_LONG *)(params))[DSP_PLAY_STEREO_MODE_INDEX] = stereo_mode;
 
 		/* Initializations from quick pick 1, 44.1khz */
 		s->wet_gain = (realtype)1.0;	  

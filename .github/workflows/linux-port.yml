@@ -1,0 +1,44 @@
+name: Linux port
+
+on:
+  push:
+    branches:
+      - fxsound-linux
+  pull_request:
+    paths:
+      - 'linux/**'
+      - 'dsp/**'
+      - 'audiopassthru/**'
+      - '.github/workflows/linux-port.yml'
+  workflow_dispatch:
+
+jobs:
+  core-and-pipewire:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             build-essential cmake pkg-config             libpipewire-0.3-dev libspa-0.2-dev
+
+      - name: Configure
+        run: |
+          cmake -S linux -B linux/build-ci             -DCMAKE_BUILD_TYPE=Release             -DFXSOUND_BUILD_PIPEWIRE=ON             -DFXSOUND_JUCE_DIR=/nonexistent
+
+      - name: Build
+        run: cmake --build linux/build-ci -j2
+
+      - name: DSP smoke test
+        run: linux/build-ci/dsp_smoke
+
+      - name: General preset audio test
+        run: linux/build-ci/preset_audio_test linux/factory-presets/1.fac
+
+      - name: Preset save/reload round-trip
+        run: linux/build-ci/preset_roundtrip_test
+
+      - name: RTKit helper syntax
+        run: sh -n linux/fxsound-rt-priority.sh

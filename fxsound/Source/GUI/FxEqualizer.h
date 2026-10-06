@@ -71,6 +71,7 @@ private:
 
         Label gain_label_;
         int band_;
+        bool ready_ = false;
     };
 
     class FxBandCenterFreqSlider : public Slider
@@ -91,6 +92,7 @@ private:
         Label& freq_label_;
 
         int band_;
+        bool ready_ = false;
     };
 
 	static constexpr int WIDTH = 776;

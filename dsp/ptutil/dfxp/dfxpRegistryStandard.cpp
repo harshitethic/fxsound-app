@@ -219,7 +219,7 @@ int dfxp_RegistryGetTopSharedFolderPath(PT_HANDLE *hp_dfxp,
 	if (wcp_top_shared_folder_path == NULL)
 		return(NOT_OKAY);
 
-	swprintf(wcp_top_shared_folder_path, L"");
+	wcp_top_shared_folder_path[0] = L'\0';
 
 	swprintf(wcp_full_key_path, L"%s\\%s\\%s\\%s", DFXP_REGISTRY_TOP_WIDE, 
 			     cast_handle->wcp_product_name, 
@@ -256,7 +256,7 @@ int dfxp_RegistryGetTopVendorSpecificFolderPath(PT_HANDLE *hp_dfxp,
 	if (wcp_top_vendor_specific_folder_path == NULL)
 		return(NOT_OKAY);
 
-	swprintf(wcp_top_vendor_specific_folder_path, L"");
+	wcp_top_vendor_specific_folder_path[0] = L'\0';
 
 	swprintf(wcp_full_key_path, L"%s\\%s\\%d\\%s", DFXP_REGISTRY_TOP_WIDE, 
 			     cast_handle->wcp_product_name, 
@@ -291,7 +291,7 @@ int dfxp_RegistryGetDfxUniversalUiFullpath(PT_HANDLE *hp_dfxp, wchar_t *wcp_dfx_
 	if (wcp_dfx_ui_path == NULL)
 		return(NOT_OKAY);
 
-	swprintf(wcp_dfx_ui_path, L"");
+	wcp_dfx_ui_path[0] = L'\0';
 
 	swprintf(wcp_full_key_path, L"%s\\%s\\%d\\%s", DFXP_REGISTRY_TOP_WIDE, 
 			     cast_handle->wcp_product_name, 

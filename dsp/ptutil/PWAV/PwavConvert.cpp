@@ -20,20 +20,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(FXSOUND_LINUX)
 #include <windows.h>
-#else
+#elif defined(__ANDROID__)
 #ifndef DWORD
 #define DWORD unsigned int
 #endif
-#endif //WIN32
+#endif
 
 #include "codedefs.h"
 #include "pwav.h"
 
 // Handle and functions declared in u_pwav.h are only used in WIN32 builds.
 // The function pwave24BitToFloat should be moved out of the pwav module to eliminate these problems.
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(FXSOUND_LINUX)
 #include "u_pwav.h"
 #endif //WIN32
 

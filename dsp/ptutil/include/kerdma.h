@@ -14,8 +14,8 @@
 #if (defined(DUIO_B) | defined(DUIO_BA) | defined(DUIO_BD))
 /* Global to code - LOOK OUT- CODE SEEMS VERY SENSITIVE TO LOCATION OF THESE */
 #define DMA_GLOBAL_DECLARATIONS \
-volatile unsigned long *comd_stat = (unsigned long *)(0x82FFF0);\
-volatile unsigned long *xfer_reg = (unsigned long *)(0x82fff3);\
+volatile PT_DSP_ULONG *comd_stat = (unsigned long *)(0x82FFF0);\
+volatile PT_DSP_ULONG *xfer_reg = (unsigned long *)(0x82fff3);\
 long *in_data_buf0;\
 long *in_data_buf1;\
 long *out_data_buf0;\
@@ -70,7 +70,7 @@ static long out_meter2_dma = 0;
     asm("	LSH  16,AR2");\
 	asm("	OR   AR2,IE");\
 	asm("	POP  AR2");\
-	*(volatile long *)(DSP_DMA_IN_TRANSFER) = 0L;
+	*(volatile PT_DSP_LONG *)(DSP_DMA_IN_TRANSFER) = 0L;
 
 #endif
 /* DUIO_B */

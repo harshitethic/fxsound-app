@@ -36,7 +36,14 @@
 namespace {
 constexpr uint32_t kRate = 48000;
 constexpr uint32_t kChannels = 2;
-constexpr size_t kRingFrames = 1u << 17; // ~2.7 s safety buffer
+// FxSound's 64-bit Windows path recommends ~40 ms average delay. Its WASAPI
+// buffers are roughly twice that length and playback starts after half-fill.
+// Keep the Linux bridge in the same operating envelope by default.
+constexpr uint32_t kWindowsAverageDelayMs = 40;
+constexpr size_t kWindowsPrimeFrames =
+    static_cast<size_t>(kRate) * kWindowsAverageDelayMs / 1000u; // 1920 @ 48 kHz
+constexpr const char* kWindowsPipeWireLatency = "1920/48000";
+constexpr size_t kRingFrames = 1u << 14; // ~341 ms, above Windows' 200 ms max buffer
 constexpr float kPeakCeiling = 0.977f;   // about -0.2 dBFS
 
 struct Ring {
@@ -45,6 +52,7 @@ struct Ring {
     std::atomic<uint64_t> write_pos{0};
     std::atomic<uint64_t> overruns{0};
     std::atomic<uint64_t> underruns{0};
+    std::atomic<bool> primed{false};
 
     void push(const float* src, size_t frames) {
         uint64_t w = write_pos.load(std::memory_order_relaxed);
@@ -67,6 +75,18 @@ struct Ring {
         uint64_t r = read_pos.load(std::memory_order_relaxed);
         uint64_t w = write_pos.load(std::memory_order_acquire);
         size_t available = static_cast<size_t>(w - r);
+
+        // Windows FxSound does not start playback from an empty render queue.
+        // It first fills roughly half of its internal buffer (about 40 ms on a
+        // modern 64-bit system), which stabilises the capture/render cadence.
+        if (!primed.load(std::memory_order_relaxed)) {
+            if (available < kWindowsPrimeFrames) {
+                std::fill(dst, dst + frames * kChannels, 0.0f);
+                return 0;
+            }
+            primed.store(true, std::memory_order_release);
+        }
+
         size_t take = std::min(frames, available);
         for (size_t i = 0; i < take; ++i) {
             size_t idx = static_cast<size_t>((r + i) % kRingFrames) * kChannels;
@@ -74,8 +94,9 @@ struct Ring {
             dst[i * 2 + 1] = data[idx + 1];
         }
         if (take < frames) {
-            std::fill(dst + take * 2, dst + frames * 2, 0.0f);
+            std::fill(dst + take * kChannels, dst + frames * kChannels, 0.0f);
             underruns.fetch_add(1, std::memory_order_relaxed);
+            primed.store(false, std::memory_order_release);
         }
         read_pos.store(r + take, std::memory_order_release);
         return take;
@@ -873,7 +894,7 @@ int create_output_stream(App& app) {
             PW_KEY_NODE_DESCRIPTION, "FxSound Processed Output",
             PW_KEY_TARGET_OBJECT, selected_output.c_str(),
             PW_KEY_NODE_AUTOCONNECT, "true",
-            PW_KEY_NODE_LATENCY, "256/48000",
+            PW_KEY_NODE_LATENCY, kWindowsPipeWireLatency,
             "audio.channels", "2",
             "audio.position", "[ FL FR ]",
             nullptr);
@@ -981,7 +1002,7 @@ int connect_streams(App& app) {
         PW_KEY_NODE_NICK, sink_description,
         PW_KEY_NODE_VIRTUAL, "true",
         PW_KEY_NODE_AUTOCONNECT, "false",
-        PW_KEY_NODE_LATENCY, "256/48000",
+        PW_KEY_NODE_LATENCY, kWindowsPipeWireLatency,
         "audio.channels", "2",
         "audio.position", "[ FL FR ]",
         nullptr);

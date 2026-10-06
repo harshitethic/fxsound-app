@@ -198,7 +198,7 @@ void c_int03()		/* interrupt routine; name is c_intxx (xx = 01..99)*/
 			long status = AES_READ_ERROR;
 			long transfer_state = STATUS_STATE;
 	  		load_parameter(); /* If its been sent, loads a parameter into memory */
-	  		if( *(volatile long *)(PC_TO_DSP_FLAGS) & PC_GOT_AES_READ_ERROR )
+	  		if( *(volatile PT_DSP_LONG *)(PC_TO_DSP_FLAGS) & PC_GOT_AES_READ_ERROR )
 	  		{
 				while(1);                                    
 			}

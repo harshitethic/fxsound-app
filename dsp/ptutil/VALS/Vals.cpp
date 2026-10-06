@@ -363,7 +363,7 @@ int PT_DECLSPEC valsCopy(PT_HANDLE *hp_from_vals, PT_HANDLE **hpp_to_vals)
 	     return(NOT_OKAY);
 
       /* Set the string */
-	  swprintf(cast_to_hdl->wcp_comment, L"%s", cast_from_hdl->wcp_comment);
+	  wcscpy(cast_to_hdl->wcp_comment, cast_from_hdl->wcp_comment);
    }
 
    /* Copy the main params */

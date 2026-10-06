@@ -297,7 +297,7 @@ int dfxpEqGetBandBoostCut_FromProcessing(PT_HANDLE *hp_dfxp, int i_band_num, rea
 		return(OKAY);
 
 	*rp_boost_cut = (realtype)0.0;
-	swprintf(wcp_boost_cut, L"%.2f", *rp_boost_cut);
+	swprintf(wcp_boost_cut, DFXP_REGISTRY_BUFFER_LENGTH, L"%.2f", *rp_boost_cut);
 
 	if (cast_handle->eq.graphicEq_hdl == NULL)
 		return(NOT_OKAY);
@@ -308,7 +308,7 @@ int dfxpEqGetBandBoostCut_FromProcessing(PT_HANDLE *hp_dfxp, int i_band_num, rea
    if (GraphicEqGetBandBoostCut(cast_handle->eq.graphicEq_hdl, i_band_num, rp_boost_cut) != OKAY)
 		return(NOT_OKAY);
 
-	swprintf(wcp_boost_cut, L"%.2f", *rp_boost_cut);
+	swprintf(wcp_boost_cut, DFXP_REGISTRY_BUFFER_LENGTH, L"%.2f", *rp_boost_cut);
 
 	return(OKAY);
 }
@@ -335,7 +335,7 @@ int dfxpEqGetBandBoostCut_FromRegistry(PT_HANDLE *hp_dfxp, int i_band_num, realt
 	int key_exists;
 
 	*rp_boost_cut = (realtype)0.0;
-	swprintf(wcp_boost_cut, L"%.2f", *rp_boost_cut);
+	swprintf(wcp_boost_cut, DFXP_REGISTRY_BUFFER_LENGTH, L"%.2f", *rp_boost_cut);
 
 	if (cast_handle->eq.graphicEq_hdl == NULL)
 		return(NOT_OKAY);
@@ -373,7 +373,7 @@ int dfxpEqGetBandBoostCut_FromRegistry(PT_HANDLE *hp_dfxp, int i_band_num, realt
 	else if (*rp_boost_cut > DFXP_GRAPHIC_EQ_MAX_BOOST_OR_CUT_DB)
 		*rp_boost_cut = DFXP_GRAPHIC_EQ_MAX_BOOST_OR_CUT_DB;
 
-	swprintf(wcp_boost_cut, L"%s", wcp_key_value);
+	swprintf(wcp_boost_cut, DFXP_REGISTRY_BUFFER_LENGTH, L"%s", wcp_key_value);
 
 	return(OKAY);
 }

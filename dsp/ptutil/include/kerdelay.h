@@ -24,7 +24,7 @@
 	  r_out = *rp_data; \
 	  *rp_data = r_in + *(volatile float *)rp_feedback_gain * (*rp_data); \
 	  rp_data++; \
-	  if(rp_data >= ((float *)rp_start + *(volatile long *)ip_delay) ) \
+	  if(rp_data >= ((float *)rp_start + *(volatile PT_DSP_LONG *)ip_delay) ) \
 	  { \
 		 rp_data = (float *)rp_start; \
 	  }
@@ -87,7 +87,7 @@
 #define kerRunDelayLineFdBkNoPop(r_in, r_out, rp_start, rp_data, ip_del, rp_fdbk, i_line_len) \
 { \
 	float *rp_MACRO; \
-	rp_MACRO = (float *)(rp_data - *(volatile long *)ip_del ); \
+	rp_MACRO = (float *)(rp_data - *(volatile PT_DSP_LONG *)ip_del ); \
 	if((long)rp_MACRO < (long)rp_start) \
 		rp_MACRO += (i_line_len); \
 	r_out = *rp_MACRO; \
@@ -132,7 +132,7 @@
 	  r_out = *rp_data; \
 	  *rp_data = r_in; \
 	  rp_data++; \
-	  if(rp_data >= ((float *)rp_start + *(volatile long *)ip_delay) ) \
+	  if(rp_data >= ((float *)rp_start + *(volatile PT_DSP_LONG *)ip_delay) ) \
 	  { \
 		 rp_data = (float *)rp_start; \
 	  }
@@ -164,7 +164,7 @@
  * NOTE-BE CAREFUL WHEN SUBTRACTING FROM POINTERS, THEY ARE UNSIGNED
  */
 #define kerGetDelayData(rp_start, i_line_len, rp_oldest, ip_delay, rp_out) \
-	rp_out = (float *)(rp_oldest - *(volatile long *)ip_delay ); \
+	rp_out = (float *)(rp_oldest - *(volatile PT_DSP_LONG *)ip_delay ); \
 	if((long)rp_out < (long)rp_start) \
 		rp_out += i_line_len;
 		
@@ -224,7 +224,7 @@
 	  r_tmp = (r_out = *rp_data) + r_filt_coef * r_tmp; \
 	  *rp_data = r_in + *(volatile float *)rp_feedback_gain * r_tmp; \
 	  rp_data++; \
-	  if(rp_data >= ((float *)rp_start + *(volatile long *)ip_delay) ) \
+	  if(rp_data >= ((float *)rp_start + *(volatile PT_DSP_LONG *)ip_delay) ) \
 		 rp_data = (float *)rp_start; \
 
 /* This version references the filter coeff via a pointer */ 
@@ -235,7 +235,7 @@
 	  r_tmp = r_out + *(volatile float *)rp_filt_coef * r_tmp; \
 	  *rp_data = r_in + *(volatile float *)rp_feedback_gain * r_tmp; \
 	  rp_data++; \
-	  if(rp_data >= ((float *)rp_start + *(volatile long *)ip_delay) ) \
+	  if(rp_data >= ((float *)rp_start + *(volatile PT_DSP_LONG *)ip_delay) ) \
 		 rp_data = (float *)rp_start; \
 */		
 /* Version that requires endpoint of circular buffer be supplied, not just the length */		 
@@ -245,7 +245,7 @@
 	  r_tmp = r_out + *(volatile float *)rp_filt_coef * r_tmp; \
 	  *rp_data = r_in + *(volatile float *)rp_feedback_gain * r_tmp; \
 	  rp_data++; \
-	  if(rp_data >= (float *)*(volatile long *)ip_delay ) \
+	  if(rp_data >= (float *)*(volatile PT_DSP_LONG *)ip_delay ) \
 		 rp_data = (float *)rp_start; \
 
 /*
@@ -283,7 +283,7 @@
 	  r_out = *rp_data + r_tmp_MACRO; \
 	  *rp_data = r_in + r_tmp_MACRO; \
 	  rp_data++; \
-	  if(rp_data >= ((float *)rp_start + *(volatile long *)ip_delay) ) \
+	  if(rp_data >= ((float *)rp_start + *(volatile PT_DSP_LONG *)ip_delay) ) \
 		 rp_data = (float *)rp_start; \
 }
  

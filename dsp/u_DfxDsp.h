@@ -132,27 +132,27 @@ private:
 	int eqGetProcessingOn(int i_storage_type, int *ip_on);
 
 	// Handles
-	int *dfxp_handle_;
-	int *preset_list_handle_;
-	int *midi_to_rval_qnt_handle_; // Midi to Real Value
-	int *rval_to_midi_qnt_handle_; // and visa versa QNT handles
+	int *dfxp_handle_ = nullptr;
+	int *preset_list_handle_ = nullptr;
+	int *midi_to_rval_qnt_handle_ = nullptr; // Midi to Real Value
+	int *rval_to_midi_qnt_handle_ = nullptr; // and visa versa QNT handles
 
-	CDerivedSlout1 *slout1_;
+	CDerivedSlout1 *slout1_ = nullptr;
 
 	// Section specific information
-	struct dfxg_section_type fidelity_;
-	struct dfxg_section_type ambience_;
-	struct dfxg_section_type surround_;
-	struct dfxg_section_type dynamic_boost_;
-	struct dfxg_section_type bass_boost_;
+	struct dfxg_section_type fidelity_{};
+	struct dfxg_section_type ambience_{};
+	struct dfxg_section_type surround_{};
+	struct dfxg_section_type dynamic_boost_{};
+	struct dfxg_section_type bass_boost_{};
 
 	bool update_from_registry_ = true;
-	int headphone_on_;
-	int music_mode_;     /* DFXP_MUSIC_MODE_MUSIC1, DFXP_MUSIC_MODE_MUSIC2, DFXP_MUSIC_MODE_SPEECH */
+	int headphone_on_ = 0;
+	int music_mode_ = 0;     /* DFXP_MUSIC_MODE_MUSIC1, DFXP_MUSIC_MODE_MUSIC2, DFXP_MUSIC_MODE_SPEECH */
 
-	struct dfxg_vendor_specific_info_type vendor_specific_;
-	struct dfxg_product_specific_info_type product_specific_;
+	struct dfxg_vendor_specific_info_type vendor_specific_{};
+	struct dfxg_product_specific_info_type product_specific_{};
 
-	int eq_processing_on_;
+	int eq_processing_on_ = 0;
 };
 

@@ -253,7 +253,7 @@ int PT_DECLSPEC valsCalcDateStrings(wchar_t *wcp_filename, wchar_t *wcp_formatte
 	else if (length == 0)
 		swprintf(wcp_sec_str, L"00.000");
 
-	swprintf(wcp_filename, L"%s%s", wcp_date_str, wcp_sec_str);
+	wcscpy(wcp_filename, wcp_date_str); wcscat(wcp_filename, wcp_sec_str);
 
 	return(OKAY);
 }
@@ -337,7 +337,7 @@ int PT_DECLSPEC valsRead(wchar_t *wcp_file_path, int i_trace_mode, CSlout *hp_sl
 			fclose(stream);
 			return(NOT_OKAY);
 		}
-		swprintf(cast_handle->wcp_comment, L"%s", wcp_str);
+		wcscpy(cast_handle->wcp_comment, wcp_str);
 	}
 	else
 		cast_handle->wcp_comment = NULL;

@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 
 #include "BinauralSyn.h"
-#include "ptutil\dfxp\u_dfxp.h"
+#include "ptutil/dfxp/u_dfxp.h"
 #include "com.h"
 #include "dfxSharedUtil.h"
 #include "GraphicEq.h"

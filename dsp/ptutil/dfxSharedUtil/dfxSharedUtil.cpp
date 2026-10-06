@@ -136,7 +136,7 @@ int dfxSharedUtil_RegistryGetTopSharedFolderPath(PT_HANDLE *hp_dfxSharedUtil, wc
 	if (wcp_top_shared_folder_path == NULL)
 		return(NOT_OKAY);
 
-	swprintf(wcp_top_shared_folder_path, L"");
+	wcp_top_shared_folder_path[0] = L'\0';
 
 	swprintf(wcp_full_key_path, L"%s\\%s\\%s\\%s", DFXP_REGISTRY_TOP_WIDE, 
 			     DFXP_REGISTRY_DFX_PRODUCT_NAME_WIDE, 

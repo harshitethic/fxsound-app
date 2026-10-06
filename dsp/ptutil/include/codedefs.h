@@ -26,6 +26,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _CRT_SECURE_NO_DEPRECATE  
 #define _CRT_NON_CONFORMING_SWPRINTFS
 
+#include <stdint.h>
+#if defined(FXSOUND_LINUX)
+typedef int32_t  PT_DSP_LONG;
+typedef uint32_t PT_DSP_ULONG;
+#else
+typedef long          PT_DSP_LONG;
+typedef unsigned long PT_DSP_ULONG;
+#endif
+
 /* Add memory leak detection to debug versions (Requires Pre-Processor Define of _CRTDBG_MAP_ALLOC*/
 #include <stdlib.h>
 

@@ -68,7 +68,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 int COMSFTWR_DECL comSftwrWriteParam(PT_HANDLE *hp_comSftwr, long l_offset, long l_val)
 {
-	float *flt_ptr;
+	float decoded_value;
+	uint32_t dsp_word;
 	struct comSftwrHdlType *cast_handle;
 
 	cast_handle = (struct comSftwrHdlType *)hp_comSftwr;
@@ -76,7 +77,8 @@ int COMSFTWR_DECL comSftwrWriteParam(PT_HANDLE *hp_comSftwr, long l_offset, long
 	if (cast_handle == NULL) 
 		return(NOT_OKAY);
 
-	flt_ptr = (float *)&l_val;
+	dsp_word = (uint32_t)l_val;
+	memcpy(&decoded_value, &dsp_word, sizeof(decoded_value));
 
 #ifdef COMSFTWR_MESSAGE_BOXES
 
@@ -90,7 +92,7 @@ int COMSFTWR_DECL comSftwrWriteParam(PT_HANDLE *hp_comSftwr, long l_offset, long
 
 #endif
 
-	cast_handle->dsp_params[l_offset] = *flt_ptr;
+	cast_handle->dsp_params[l_offset] = decoded_value;
 
 	/* Set the recue pending flag */
 	cast_handle->comSftwrReCuePending = 1;

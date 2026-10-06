@@ -122,7 +122,7 @@ int CSlout::Display_Wide(int i_linenum, wchar_t *wcp_msg)
    return(OKAY);      
 }
 
-#if defined( WIN32 ) // Wide char functions only supported in WIN32 builds.
+#if defined( WIN32 ) || defined(FXSOUND_LINUX)
 
 /*
  * FUNCTION: Error_Wide()

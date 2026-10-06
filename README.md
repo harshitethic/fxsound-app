@@ -6,7 +6,7 @@ FxSound Linux keeps the real upstream **DfxDsp** processing engine and original 
 
 > **Status:** v0.1.0-alpha — usable and tested on Kali Linux, but still an early community port.
 
-![FxSound Linux](docs/screenshots/fxsound-linux-dark.png)
+![FxSound Linux](docs/screenshots/fxsound-linux-dark.jpg)
 
 ## Why this exists
 

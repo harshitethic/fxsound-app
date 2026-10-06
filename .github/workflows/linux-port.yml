@@ -36,3 +36,6 @@ jobs:
 
       - name: General preset audio test
         run: linux/build-ci/preset_audio_test linux/factory-presets/1.fac
+
+      - name: Preset save/reload round-trip
+        run: linux/build-ci/preset_roundtrip_test

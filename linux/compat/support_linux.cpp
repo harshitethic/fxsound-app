@@ -195,3 +195,41 @@ wchar_t* fxsound_fgetws(wchar_t* dst, int count, FILE* stream)
 
     return dst;
 }
+
+
+int fxsound_fwprintf(FILE* stream, const wchar_t* format, ...)
+{
+    if (!stream || !format)
+        return -1;
+
+    const std::wstring translated = fxsound_translate_wprintf_format(format);
+    std::vector<wchar_t> buffer(1024);
+
+    va_list args;
+    va_start(args, format);
+
+    int rc = -1;
+    for (;;) {
+        va_list copy;
+        va_copy(copy, args);
+        rc = ::vswprintf(buffer.data(), buffer.size(), translated.c_str(), copy);
+        va_end(copy);
+
+        if (rc >= 0 && static_cast<size_t>(rc) < buffer.size())
+            break;
+
+        if (buffer.size() >= (1u << 20)) {
+            va_end(args);
+            return -1;
+        }
+        buffer.resize(buffer.size() * 2);
+    }
+    va_end(args);
+
+    const std::string utf8 = wide_to_utf8(buffer.data());
+    if (utf8.empty() && rc != 0)
+        return -1;
+
+    const size_t written = fwrite(utf8.data(), 1, utf8.size(), stream);
+    return written == utf8.size() ? rc : -1;
+}

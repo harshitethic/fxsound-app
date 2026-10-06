@@ -69,6 +69,12 @@ target_include_directories(preset_audio_test PRIVATE
 )
 target_link_libraries(preset_audio_test PRIVATE fxsound_dsp)
 
+add_executable(preset_roundtrip_test "${CMAKE_CURRENT_LIST_DIR}/tests/preset_roundtrip_test.cpp")
+target_include_directories(preset_roundtrip_test PRIVATE
+  "${CMAKE_CURRENT_LIST_DIR}/../dsp/include"
+)
+target_link_libraries(preset_roundtrip_test PRIVATE fxsound_dsp)
+
 option(FXSOUND_BUILD_PIPEWIRE "Build the PipeWire realtime backend" ON)
 if(FXSOUND_BUILD_PIPEWIRE)
   find_package(PkgConfig QUIET)

@@ -13,6 +13,7 @@
 #include <atomic>
 #include <cerrno>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdio>
@@ -36,6 +37,7 @@
 namespace {
 constexpr uint32_t kRate = 48000;
 constexpr uint32_t kChannels = 2;
+constexpr int kWindowsDefaultEqBands = 10;
 // FxSound's 64-bit Windows path recommends ~40 ms average delay. Its WASAPI
 // buffers are roughly twice that length and playback starts after half-fill.
 // Keep the Linux bridge in the same operating envelope by default.
@@ -121,6 +123,8 @@ struct App {
     std::mutex dsp_mutex;
     std::string current_preset{"General"};
     bool preset_modified{false};
+    bool preset_dirty{false};
+    std::chrono::steady_clock::time_point last_autosave{std::chrono::steady_clock::now()};
     bool power_on{true};
     std::atomic<bool> control_running{true};
     int control_fd{-1};
@@ -175,6 +179,16 @@ std::filesystem::path preset_dir() {
     return std::filesystem::path(".");
 }
 
+std::filesystem::path autosave_dir() {
+    if (const char* home = std::getenv("HOME"))
+        return std::filesystem::path(home) / ".local/share/fxsound-linux/autosave";
+    return std::filesystem::path("./autosave");
+}
+
+std::filesystem::path autosave_path_for_name(const std::string& name) {
+    return autosave_dir() / (name + ".fac");
+}
+
 const FactoryPreset* find_factory_preset(const std::string& name) {
     for (const auto& preset : kFactoryPresets)
         if (name == preset.name) return &preset;
@@ -212,6 +226,62 @@ void save_output_name(const std::string& name) {
     if (out) out << name << "\n";
 }
 
+struct PersistentAudioSettings {
+    int bands{kWindowsDefaultEqBands};
+    float volume_leveling{0.0f};
+    float master_gain{0.0f};
+    float balance{0.0f};
+    float filter_q{1.0f};
+    bool power{true};
+};
+
+PersistentAudioSettings load_audio_settings() {
+    PersistentAudioSettings settings;
+    std::ifstream in(state_dir() / "audio-settings.conf");
+    std::string line;
+    while (std::getline(in, line)) {
+        const auto split = line.find('=');
+        if (split == std::string::npos) continue;
+        const std::string key = line.substr(0, split);
+        const std::string value = line.substr(split + 1);
+        try {
+            if (key == "bands") settings.bands = std::stoi(value);
+            else if (key == "volume_leveling") settings.volume_leveling = std::stof(value);
+            else if (key == "master_gain") settings.master_gain = std::stof(value);
+            else if (key == "balance") settings.balance = std::stof(value);
+            else if (key == "filter_q") settings.filter_q = std::stof(value);
+            else if (key == "power") settings.power = (value != "0");
+        } catch (...) {
+            // Keep the Windows defaults for malformed settings.
+        }
+    }
+
+    if (!(settings.bands == 5 || settings.bands == 10 || settings.bands == 15 ||
+          settings.bands == 20 || settings.bands == 31))
+        settings.bands = kWindowsDefaultEqBands;
+    settings.volume_leveling = std::clamp(
+        std::round(settings.volume_leveling * 2.0f) / 2.0f, 0.0f, 4.0f);
+    settings.master_gain = std::clamp(std::round(settings.master_gain), -20.0f, 20.0f);
+    settings.balance = std::clamp(std::round(settings.balance), -20.0f, 20.0f);
+    settings.filter_q = std::clamp(
+        std::round(settings.filter_q * 2.0f) / 2.0f, 1.0f, 3.0f);
+    return settings;
+}
+
+void save_audio_settings_unlocked(App& app) {
+    std::error_code ec;
+    std::filesystem::create_directories(state_dir(), ec);
+    std::ofstream out(state_dir() / "audio-settings.conf", std::ios::trunc);
+    if (!out) return;
+
+    out << "bands=" << app.dsp.getNumEqBands() << '\n'
+        << "volume_leveling=" << app.dsp.getVolumeLeveling() << '\n'
+        << "master_gain=" << app.dsp.getMasterGain() << '\n'
+        << "balance=" << app.dsp.getBalance() << '\n'
+        << "filter_q=" << app.dsp.getFilterQ() << '\n'
+        << "power=" << (app.power_on ? 1 : 0) << '\n';
+}
+
 std::filesystem::path preset_path_for_name(const std::string& name) {
     if (const auto* preset = find_factory_preset(name))
         return preset_dir() / preset->file;
@@ -221,10 +291,22 @@ std::filesystem::path preset_path_for_name(const std::string& name) {
 std::filesystem::path default_preset_path(App& app) {
     if (const char* requested = std::getenv("FXSOUND_PRESET_PATH")) {
         app.current_preset = "Custom";
+        app.preset_modified = false;
+        app.preset_dirty = false;
         return std::filesystem::path(requested);
     }
 
     app.current_preset = load_saved_preset_name();
+    const auto autosave = autosave_path_for_name(app.current_preset);
+    std::error_code ec;
+    if (std::filesystem::exists(autosave, ec)) {
+        app.preset_modified = true;
+        app.preset_dirty = false;
+        return autosave;
+    }
+
+    app.preset_modified = false;
+    app.preset_dirty = false;
     return preset_path_for_name(app.current_preset);
 }
 
@@ -255,26 +337,60 @@ bool apply_preset(App& app, const std::filesystem::path& preset_path) {
     return true;
 }
 
+bool autosave_current_preset_unlocked(App& app) {
+    if (!app.preset_dirty || !find_factory_preset(app.current_preset))
+        return true;
+
+    std::error_code ec;
+    const auto dir = autosave_dir();
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        std::fprintf(stderr, "FxSound: failed to create autosave directory: %s\n",
+                     ec.message().c_str());
+        return false;
+    }
+
+    std::wstring preset_name(app.current_preset.begin(), app.current_preset.end());
+    if (app.dsp.savePreset(preset_name, dir.wstring()) != 0) {
+        std::fprintf(stderr, "FxSound: failed to autosave preset: %s\n",
+                     app.current_preset.c_str());
+        return false;
+    }
+
+    app.preset_dirty = false;
+    app.last_autosave = std::chrono::steady_clock::now();
+    return true;
+}
+
+void mark_preset_modified(App& app) {
+    app.preset_modified = true;
+    app.preset_dirty = true;
+}
+
 void configure_dsp(App& app) {
     if (app.dsp.setSignalFormat(32, 2, kRate, 32) != 0) {
         std::fprintf(stderr, "FxSound: setSignalFormat failed\n");
         return;
     }
 
-    app.dsp.powerOn(true);
+    const auto settings = load_audio_settings();
+    app.power_on = settings.power;
+    app.dsp.powerOn(settings.power);
+
+    // Windows persists EQ-band count separately from the selected .fac preset.
+    app.dsp.setNumBands(settings.bands);
 
     const auto preset = default_preset_path(app);
     if (!apply_preset(app, preset)) {
         std::fprintf(stderr, "FxSound: preset load failed; leaving native DSP flat rather than using guessed tuning\n");
     }
 
-    // Preserve FxSound's own defaults here. Extra Linux-side loudness shaping
-    // would make the result diverge from the Windows preset.
-    app.dsp.setVolumeLeveling(0.0f);
+    // These are application settings in the Windows controller, not .fac fields.
+    app.dsp.setVolumeLeveling(settings.volume_leveling);
     app.dsp.setNormalization(0.0f);
-    app.dsp.setFilterQ(1.0f);
-    app.dsp.setMasterGain(0.0f);
-    app.dsp.setBalance(0.0f);
+    app.dsp.setFilterQ(settings.filter_q);
+    app.dsp.setMasterGain(settings.master_gain);
+    app.dsp.setBalance(settings.balance);
 }
 
 
@@ -541,26 +657,41 @@ std::string handle_control_command(App& app, const std::string& input) {
 
     if (command.rfind("PRESET ", 0) == 0) {
         const std::string name = trim_copy(command.substr(7));
-        const auto path = preset_path_for_name(name);
-        if (path.empty())
+        const auto factory_path = preset_path_for_name(name);
+        if (factory_path.empty())
             return "{\"ok\":false,\"error\":\"unknown preset\"}";
 
         std::lock_guard<std::mutex> lock(app.dsp_mutex);
-        if (!apply_preset(app, path))
+        if (!autosave_current_preset_unlocked(app))
+            return "{\"ok\":false,\"error\":\"autosave failed\"}";
+
+        const auto autosave = autosave_path_for_name(name);
+        std::error_code ec;
+        const bool has_autosave = std::filesystem::exists(autosave, ec);
+        const auto& load_path = has_autosave ? autosave : factory_path;
+        if (!apply_preset(app, load_path))
             return "{\"ok\":false,\"error\":\"preset load failed\"}";
 
         app.current_preset = name;
-        app.preset_modified = false;
+        app.preset_modified = has_autosave;
+        app.preset_dirty = false;
         save_preset_name(name);
         return "{\"ok\":true}";
     }
 
     if (command == "RESET") {
         std::lock_guard<std::mutex> lock(app.dsp_mutex);
-        const auto path = preset_path_for_name(app.current_preset == "Custom" ? "General" : app.current_preset);
+        const std::string name = app.current_preset == "Custom" ? "General" : app.current_preset;
+        const auto path = preset_path_for_name(name);
         if (path.empty() || !apply_preset(app, path))
             return "{\"ok\":false,\"error\":\"reset failed\"}";
+
+        std::error_code ec;
+        std::filesystem::remove(autosave_path_for_name(name), ec);
+        app.current_preset = name;
         app.preset_modified = false;
+        app.preset_dirty = false;
+        save_preset_name(name);
         return "{\"ok\":true}";
     }
 
@@ -573,6 +704,7 @@ std::string handle_control_command(App& app, const std::string& input) {
         std::lock_guard<std::mutex> lock(app.dsp_mutex);
         app.dsp.powerOn(on);
         app.power_on = on;
+        save_audio_settings_unlocked(app);
         return "{\"ok\":true}";
     }
 
@@ -589,7 +721,7 @@ std::string handle_control_command(App& app, const std::string& input) {
 
         std::lock_guard<std::mutex> lock(app.dsp_mutex);
         app.dsp.setEffectValue(effect, value);
-        app.preset_modified = true;
+        mark_preset_modified(app);
         return "{\"ok\":true}";
     }
 
@@ -622,7 +754,7 @@ std::string handle_control_command(App& app, const std::string& input) {
             app.dsp.setEqBandBoostCut(band, value);
         }
 
-        app.preset_modified = true;
+        mark_preset_modified(app);
         return "{\"ok\":true}";
     }
 
@@ -634,7 +766,7 @@ std::string handle_control_command(App& app, const std::string& input) {
 
         std::lock_guard<std::mutex> lock(app.dsp_mutex);
         app.dsp.setNumBands(bands);
-        app.preset_modified = true;
+        save_audio_settings_unlocked(app);
         return "{\"ok\":true}";
     }
 
@@ -650,22 +782,27 @@ std::string handle_control_command(App& app, const std::string& input) {
         if (control == "volume") {
             if (value < 0.0f || value > 4.0f)
                 return "{\"ok\":false,\"error\":\"volume range is 0..4\"}";
+            value = std::round(value * 2.0f) / 2.0f;
             app.dsp.setVolumeLeveling(value);
         } else if (control == "master") {
             if (value < -20.0f || value > 20.0f)
                 return "{\"ok\":false,\"error\":\"master range is -20..20\"}";
+            value = std::round(value);
             app.dsp.setMasterGain(value);
         } else if (control == "balance") {
             if (value < -20.0f || value > 20.0f)
                 return "{\"ok\":false,\"error\":\"balance range is -20..20\"}";
+            value = std::round(value);
             app.dsp.setBalance(value);
         } else if (control == "filterq") {
             if (value < 1.0f || value > 3.0f)
                 return "{\"ok\":false,\"error\":\"filterq range is 1..3\"}";
+            value = std::round(value * 2.0f) / 2.0f;
             app.dsp.setFilterQ(value);
         } else {
             return "{\"ok\":false,\"error\":\"unknown audio control\"}";
         }
+        save_audio_settings_unlocked(app);
         return "{\"ok\":true}";
     }
 
@@ -713,6 +850,15 @@ void control_server(App* app) {
     std::fprintf(stderr, "FxSound control: %s\n", socket_path.c_str());
 
     while (app->control_running.load(std::memory_order_relaxed)) {
+        const auto now = std::chrono::steady_clock::now();
+        if (now - app->last_autosave >= std::chrono::seconds(60)) {
+            std::lock_guard<std::mutex> lock(app->dsp_mutex);
+            if (app->preset_dirty)
+                autosave_current_preset_unlocked(*app);
+            else
+                app->last_autosave = now;
+        }
+
         pollfd item{server, POLLIN, 0};
         const int ready = ::poll(&item, 1, 250);
         if (ready <= 0 || !(item.revents & POLLIN)) continue;
@@ -1138,6 +1284,12 @@ int main(int argc, char** argv) {
     app.control_running.store(false, std::memory_order_relaxed);
     if (app.control_thread.joinable())
         app.control_thread.join();
+
+    {
+        std::lock_guard<std::mutex> lock(app.dsp_mutex);
+        autosave_current_preset_unlocked(app);
+        save_audio_settings_unlocked(app);
+    }
 
     std::fprintf(stderr,
         "FxSound stopped: in=%llu out=%llu underruns=%llu overruns=%llu "

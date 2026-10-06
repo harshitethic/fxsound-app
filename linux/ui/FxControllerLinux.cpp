@@ -297,24 +297,28 @@ void FxController::setNumEqBands(int num_bands)
 
 void FxController::setVolumeLeveling(float value)
 {
+    value = std::round(value * 2.0f) / 2.0f;
     if (responseOk(sendCommand("AUDIO volume " + juce::String(value, 4))))
         volume_leveling_ = value;
 }
 
 void FxController::setBalance(float value)
 {
+    value = std::round(value);
     if (responseOk(sendCommand("AUDIO balance " + juce::String(value, 4))))
         balance_ = value;
 }
 
 void FxController::setMasterGain(float value)
 {
+    value = std::round(value);
     if (responseOk(sendCommand("AUDIO master " + juce::String(value, 4))))
         master_gain_ = value;
 }
 
 void FxController::setFilterQ(float value)
 {
+    value = std::round(value * 2.0f) / 2.0f;
     if (responseOk(sendCommand("AUDIO filterq " + juce::String(value, 4))))
         filter_q_ = value;
 }

@@ -230,5 +230,7 @@ static inline void* GetProcAddress(HMODULE h, const char* name) { return (h && n
 
 #ifdef __cplusplus
 wchar_t* fxsound_fgetws(wchar_t* dst, int count, FILE* stream);
+int fxsound_fwprintf(FILE* stream, const wchar_t* format, ...);
 #define fgetws fxsound_fgetws
+#define fwprintf fxsound_fwprintf
 #endif

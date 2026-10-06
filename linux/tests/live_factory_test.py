@@ -24,6 +24,8 @@ def cmd(command: str):
     s.close()
     return json.loads(data.decode())
 
+initial_status = cmd("STATUS")
+original_preset = initial_status.get("preset", "General")
 presets = cmd("PRESETS")["presets"]
 wav_path = "/tmp/fxsound-factory-test.wav"
 sample_rate = 48000
@@ -79,7 +81,8 @@ try:
         ):
             failures.append((name, "audio"))
 finally:
-    cmd("PRESET General")
+    if original_preset in presets:
+        cmd("PRESET " + original_preset)
     try:
         os.remove(wav_path)
     except FileNotFoundError:

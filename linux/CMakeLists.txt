@@ -109,13 +109,11 @@ endif()
 
 if(EXISTS "${FXSOUND_JUCE_DIR}/CMakeLists.txt")
   # JUCE 6.1.6 predates GCC 15 and uses std::exchange without directly
-  # including <utility> in one GUI header. Pre-include it rather than patching
-  # the third-party JUCE checkout.
+  # including <utility>. juceaide is compiled while add_subdirectory() is
+  # configuring JUCE, so this must be a global compiler flag rather than only
+  # a target-level option.
   if(UNIX AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(
-      "$<$<COMPILE_LANGUAGE:CXX>:-include>"
-      "$<$<COMPILE_LANGUAGE:CXX>:utility>"
-    )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include utility")
   endif()
 
   add_subdirectory("${FXSOUND_JUCE_DIR}" "${CMAKE_BINARY_DIR}/JUCE" EXCLUDE_FROM_ALL)
